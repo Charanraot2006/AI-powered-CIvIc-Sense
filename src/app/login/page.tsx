@@ -24,14 +24,14 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  // If already logged in, redirect to appropriate page
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
+  // Handle redirection based on actual session data (used for 'Continue' button)
+  const handleContinue = () => {
+    if (session?.user) {
       // @ts-ignore
       const userRole = session.user.role;
       router.push(userRole === 'authority' ? '/dashboard' : '/report');
     }
-  }, [status, session, router]);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,15 +50,73 @@ export default function LoginPage() {
         setError('Invalid credentials or role mismatch. Please try again.');
         setLoading(false);
       } else if (result?.ok) {
-        // Success - redirect based on input role for immediate UX, 
-        // but session check above will ensure consistency
-        router.push(role === 'authority' ? '/dashboard' : '/report');
+        // Success
+        const redirectUrl = role === 'authority' ? '/dashboard' : '/report';
+        router.push(redirectUrl);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
+
+  // UI for already authenticated users
+  if (status === 'authenticated' && session?.user) {
+    return (
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '-50px', left: '-50px', width: '150px', height: '150px', background: 'var(--primary)', filter: 'blur(80px)', opacity: 0.3 }} />
+          <div style={{ position: 'absolute', bottom: '-50px', right: '-50px', width: '150px', height: '150px', background: 'var(--secondary)', filter: 'blur(80px)', opacity: 0.3 }} />
+
+          <div style={{ position: 'relative', zIndex: 1, padding: '1rem' }}>
+            <MapPin size={48} color="var(--primary)" style={{ margin: '0 auto 1.5rem auto' }} />
+            <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Signed In</h2>
+            <div style={{ 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              padding: '1.5rem', 
+              borderRadius: 'var(--radius-sm)', 
+              marginBottom: '2rem',
+              border: '1px solid var(--border)' 
+            }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>You are currently signed in as:</p>
+              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>{session.user.email}</p>
+              <div style={{ 
+                marginTop: '1rem', 
+                display: 'inline-block', 
+                padding: '0.2rem 0.8rem', 
+                borderRadius: '20px', 
+                background: 'rgba(59, 130, 246, 0.1)', 
+                color: 'var(--primary)',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                textTransform: 'uppercase'
+              }}>
+                {/* @ts-ignore */}
+                {session.user.role || 'Citizen'}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button 
+                onClick={handleContinue}
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '1rem' }}
+              >
+                Continue to Dashboard
+              </button>
+              <button 
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="btn btn-outline" 
+                style={{ width: '100%', padding: '1rem' }}
+              >
+                Sign Out & Switch Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
